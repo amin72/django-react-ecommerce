@@ -13,8 +13,9 @@ import {
 } from 'semantic-ui-react'
 
 import axios from 'axios'
+import { authAxios } from '../utils'
 
-import { PRODUCT_LIST_URL } from '../constants'
+import { PRODUCT_LIST_URL, ADD_TO_CART_URL } from '../constants'
 
 
 class ProductList extends Component {
@@ -40,6 +41,28 @@ class ProductList extends Component {
             }).catch(err => {
                 this.setState({
                     error: err
+                })
+            })
+    }
+
+
+    handleAddToCart = slug => {
+        this.setState({
+            loading: true
+        })
+
+        authAxios.post(ADD_TO_CART_URL, { slug })
+            .then(res => {
+                // TODO: update cart count
+                console.log(res.data)
+
+                this.setState({
+                    loading: false
+                })
+            }).catch(err => {
+                this.setState({
+                    error: err,
+                    loading: false
                 })
             })
     }
@@ -80,7 +103,7 @@ class ProductList extends Component {
                                 </Item.Meta>
                                 <Item.Description>{item.description}</Item.Description>
                                 <Item.Extra>
-                                    <Button primary floated='right' icon labelPosition="right" >
+                                    <Button primary floated='right' icon labelPosition="right" onClick={() => this.handleAddToCart(item.slug)} >
                                         Add to card
                                         <Icon name='cart plus' />
                                     </Button>

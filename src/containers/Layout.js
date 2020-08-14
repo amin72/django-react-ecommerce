@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import {
     Container,
     Divider,
@@ -13,10 +13,17 @@ import {
 import { Link, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import { logout } from "../store/actions/auth";
+import { fetchCart } from "../store/actions/cart";
 
 class CustomLayout extends React.Component {
+    componentDidMount() {
+        this.props.fetchCart()
+    }
+
+
     render() {
-        const { authenticated } = this.props;
+        const { authenticated, cart, loading } = this.props;
+
         return (
             <div>
                 <Menu inverted>
@@ -24,23 +31,64 @@ class CustomLayout extends React.Component {
                         <Link to="/">
                             <Menu.Item header>Home</Menu.Item>
                         </Link>
-                        {authenticated ? (
-                            <Menu.Item header onClick={() => this.props.logout()}>
-                                Logout
-                            </Menu.Item>
-                        ) : (
-                                <React.Fragment>
-                                    <Link to="/login">
-                                        <Menu.Item header>Login</Menu.Item>
-                                    </Link>
-                                    <Link to="/signup">
-                                        <Menu.Item header>Signup</Menu.Item>
-                                    </Link>
-                                </React.Fragment>
-                            )}
+
                         <Link to="/products">
                             <Menu.Item header>Products</Menu.Item>
                         </Link>
+
+                        <Menu.Menu inverted position='right'>
+
+                            {authenticated ? (
+                                <Fragment>
+                                    <Dropdown
+                                        icon="cart"
+                                        loading={loading}
+                                        text={`${cart !== null ? cart.order_items.length : 0}`} pointing className='link item'>
+                                        {cart &&
+                                            <Dropdown.Menu>
+                                                {cart && cart.order_items.map(item => (
+                                                    <Dropdown.Item key={item.id}>
+                                                        {item.quantity} x {item.item}
+                                                    </Dropdown.Item>
+                                                ))}
+
+                                                {cart && cart.order_items.length < 1 ? (
+                                                    <Dropdown.Item>
+                                                        No items in your cart
+                                                    </Dropdown.Item>
+                                                ) : null}
+
+                                                {cart && cart.order_items.length > 0 ? (
+                                                    <>
+                                                        <Dropdown.Divider />
+                                                        <Dropdown.Item>
+                                                            <Dropdown.Item
+                                                                icon='arrow right'
+                                                                text='Checkout'
+                                                                onClick={() => this.props.history.push('/order-summary')} />
+                                                        </Dropdown.Item>
+                                                    </>
+                                                ) : null}
+                                            </Dropdown.Menu>
+                                        }
+                                    </Dropdown>
+
+                                    <Menu.Item header onClick={() => this.props.logout()}>
+                                        Logout
+                                    </Menu.Item>
+                                </Fragment>
+                            ) : (
+                                    <React.Fragment>
+                                        <Link to="/login">
+                                            <Menu.Item header>Login</Menu.Item>
+                                        </Link>
+                                        <Link to="/signup">
+                                            <Menu.Item header>Signup</Menu.Item>
+                                        </Link>
+                                    </React.Fragment>
+                                )}
+
+                        </Menu.Menu>
 
                     </Container>
                 </Menu>
@@ -50,7 +98,8 @@ class CustomLayout extends React.Component {
                 <Segment
                     inverted
                     vertical
-                    style={{ margin: "5em 0em 0em", padding: "5em 0em" }}
+                    style={{ margin: "5em 0em 0em", padding: "5em 0em" }
+                    }
                 >
                     <Container textAlign="center">
                         <Grid divided inverted stackable>
@@ -86,7 +135,7 @@ class CustomLayout extends React.Component {
                                 <p>
                                     Extra space for a call to action inside the footer that could
                                     help re-engage users.
-                </p>
+                                </p>
                             </Grid.Column>
                         </Grid>
 
@@ -95,33 +144,36 @@ class CustomLayout extends React.Component {
                         <List horizontal inverted divided link size="small">
                             <List.Item as="a" href="#">
                                 Site Map
-              </List.Item>
+                            </List.Item>
                             <List.Item as="a" href="#">
                                 Contact Us
-              </List.Item>
+                            </List.Item>
                             <List.Item as="a" href="#">
                                 Terms and Conditions
-              </List.Item>
+                            </List.Item>
                             <List.Item as="a" href="#">
                                 Privacy Policy
-              </List.Item>
+                            </List.Item>
                         </List>
                     </Container>
-                </Segment>
-            </div>
+                </Segment >
+            </div >
         );
     }
 }
 
 const mapStateToProps = state => {
     return {
-        authenticated: state.auth.token !== null
+        authenticated: state.auth.token !== null,
+        cart: state.cart.shoppingCart,
+        loading: state.cart.loading
     };
 };
 
 const mapDispatchToProps = dispatch => {
     return {
-        logout: () => dispatch(logout())
+        logout: () => dispatch(logout()),
+        fetchCart: () => dispatch(fetchCart())
     };
 };
 
