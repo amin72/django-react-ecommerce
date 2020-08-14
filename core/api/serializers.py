@@ -9,6 +9,7 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = [
+            'id',
             'title',
             'price',
             'discount_price',
@@ -27,26 +28,36 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    item = serializers.StringRelatedField()
+    item = ItemSerializer()
+    final_price = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
         fields = [
             'id',
             'item',
-            'quantity'
+            'quantity',
+            'final_price'
         ]
-    
+
+    def get_final_price(self, obj):
+        return obj.get_final_price()
+
 
 class OrderSerializer(serializers.ModelSerializer):
     order_items = serializers.SerializerMethodField()
+    total = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
             'id',
-            'order_items'
+            'order_items',
+            'total'
         ]
     
     def get_order_items(self, obj):
         return OrderItemSerializer(obj.items.all(), many=True).data
+
+    def get_total(self, obj):
+        return obj.get_total()
