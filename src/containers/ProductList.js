@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { connect } from 'react-redux'
 import {
     Button,
     Icon,
@@ -15,6 +16,7 @@ import {
 import axios from 'axios'
 import { authAxios } from '../utils'
 
+import { fetchCart } from '../store/actions/cart'
 import { PRODUCT_LIST_URL, ADD_TO_CART_URL } from '../constants'
 
 
@@ -53,9 +55,7 @@ class ProductList extends Component {
 
         authAxios.post(ADD_TO_CART_URL, { slug })
             .then(res => {
-                // TODO: update cart count
-                console.log(res.data)
-
+                this.props.fetchCart();
                 this.setState({
                     loading: false
                 })
@@ -130,4 +130,12 @@ class ProductList extends Component {
     }
 }
 
-export default ProductList
+
+const mapDispatchToProps = dispatch => {
+    return {
+        fetchCart: () => dispatch(fetchCart())
+    }
+}
+
+
+export default connect(null, mapDispatchToProps)(ProductList)

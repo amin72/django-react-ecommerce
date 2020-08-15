@@ -36,7 +36,7 @@ class CustomLayout extends React.Component {
                             <Menu.Item header>Products</Menu.Item>
                         </Link>
 
-                        <Menu.Menu inverted position='right'>
+                        <Menu.Menu position='right'>
 
                             {authenticated ? (
                                 <Fragment>
@@ -46,9 +46,9 @@ class CustomLayout extends React.Component {
                                         text={`${cart !== null ? cart.order_items.length : 0}`} pointing className='link item'>
                                         {cart &&
                                             <Dropdown.Menu>
-                                                {cart && cart.order_items.map(item => (
-                                                    <Dropdown.Item key={item.id}>
-                                                        {item.quantity} x {item.item}
+                                                {cart && cart.order_items.map(order_item => (
+                                                    <Dropdown.Item key={order_item.id}>
+                                                        {order_item.quantity} x {order_item.item.title}
                                                     </Dropdown.Item>
                                                 ))}
 
