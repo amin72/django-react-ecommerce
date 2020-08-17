@@ -9,3 +9,4 @@ package-lock.json
 venv
 media
 .vscode/
+.env
