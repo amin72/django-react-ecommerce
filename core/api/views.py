@@ -1,5 +1,6 @@
 import stripe
 from django.conf import settings
+from django.http import Http404
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
@@ -65,9 +66,7 @@ class OrderDetailAPIView(generics.RetrieveAPIView):
             order = Order.objects.get(user=self.request.user, ordered=False)
             return order
         except Order.DoesNotExist:
-            return Response({
-                "message": _("You do not have an active order")
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise Http404(_("You do not have an active order"))
 
 
 class PaymentAPIView(APIView):
