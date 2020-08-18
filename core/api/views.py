@@ -17,7 +17,11 @@ from core.models import (
     Payment,
     Coupon
 )
-from .serializers import ItemSerializer, OrderSerializer
+from .serializers import (
+    ItemSerializer,
+    OrderSerializer,
+    ItemDetailSerializer
+)
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -25,6 +29,12 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class ItemListAPIView(generics.ListAPIView):
     serializer_class = ItemSerializer
+    queryset = Item.objects.all()
+    permission_classes = [AllowAny]
+
+
+class ItemDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = ItemDetailSerializer
     queryset = Item.objects.all()
     permission_classes = [AllowAny]
 
@@ -39,9 +49,9 @@ class AddToCartAPIView(APIView):
 
         item = get_object_or_404(Item, slug=slug)
         order_item, created = OrderItem.objects.get_or_create(item=item,
-            user=request.user,
-            ordered=False)
-        
+                                                              user=request.user,
+                                                              ordered=False)
+
         order_qs = Order.objects.filter(user=request.user, ordered=False)
 
         if order_qs.exists():
@@ -59,7 +69,7 @@ class AddToCartAPIView(APIView):
         else:
             ordered_date = timezone.now()
             order = Order.objects.create(user=request.user,
-                ordered_date=ordered_date)
+                                         ordered_date=ordered_date)
             order.items.add(order_item)
             return Response(status.HTTP_200_OK)
 
@@ -106,19 +116,19 @@ class PaymentAPIView(APIView):
                     source=token
                 )
 
-        amount = int(order.get_total() * 100) # cents
+        amount = int(order.get_total() * 100)  # cents
 
         try:
             # Use Stripe's library to make requests
             if use_default:
                 charge = stripe.Charge.create(
-                    amount=amount, # cents
+                    amount=amount,  # cents
                     currency='usd',
                     customer=userprofile.stripe_customer_id
                 )
             else:
                 charge = stripe.Charge.create(
-                    amount=amount, # cents
+                    amount=amount,  # cents
                     currency='usd',
                     source=token
                 )
@@ -185,7 +195,6 @@ class PaymentAPIView(APIView):
             return Response({
                 "message": "A serious error occurred. We have been notified."
             }, status=status.HTTP_400_BAD_REQUEST)
-
 
         return Response({
             "message": "Invalid data received"
