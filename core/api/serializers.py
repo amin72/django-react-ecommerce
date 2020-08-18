@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import Item, Order, OrderItem
+from core.models import Item, Order, OrderItem, Coupon
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -44,16 +44,28 @@ class OrderItemSerializer(serializers.ModelSerializer):
         return obj.get_final_price()
 
 
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Coupon
+        fields = [
+            'id',
+            'code',
+            'amount'
+        ]
+
+
 class OrderSerializer(serializers.ModelSerializer):
     order_items = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
+    coupon = CouponSerializer()
 
     class Meta:
         model = Order
         fields = [
             'id',
             'order_items',
-            'total'
+            'total',
+            'coupon'
         ]
     
     def get_order_items(self, obj):
