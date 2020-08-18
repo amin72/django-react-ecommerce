@@ -26,7 +26,6 @@ ADDRESS_CHOICES = (
 )
 
 
-
 class Item(models.Model):
     title = models.CharField(max_length=100)
     price = models.FloatField()
@@ -49,10 +48,32 @@ class Item(models.Model):
 
     def get_remove_from_cart_url(self):
         return reverse('core:remove_from_cart', kwargs={'slug': self.slug})
-    
+
     class Meta:
         ordering = ['-created_at']
 
+
+class Variation(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+
+    class Meta:
+        unique_together = ['item', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class ItemVariation(models.Model):
+    variation = models.ForeignKey(Variation, on_delete=models.CASCADE)
+    value = models.CharField(max_length=50)
+    attachment = models.ImageField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ['variation', 'value']
+
+    def __str__(self):
+        return self.value
 
 
 class OrderItem(models.Model):
@@ -81,24 +102,25 @@ class OrderItem(models.Model):
         return self.get_total_item_price()
 
 
-
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     items = models.ManyToManyField(OrderItem)
     start_date = models.DateTimeField(auto_now_add=True)
     ordered_date = models.DateTimeField()
     ordered = models.BooleanField(default=False)
-    
+
     shipping_address = models.ForeignKey('Address',
-        related_name='shipping_address',
-        on_delete=models.SET_NULL, blank=True, null=True)
-    
+                                         related_name='shipping_address',
+                                         on_delete=models.SET_NULL, blank=True, null=True)
+
     billing_address = models.ForeignKey('Address',
-        related_name='billing_address',
-        on_delete=models.SET_NULL, blank=True, null=True)
-    
-    payment = models.ForeignKey('Payment', on_delete=models.SET_NULL, blank=True, null=True)
-    coupon = models.ForeignKey('Coupon', on_delete=models.SET_NULL, blank=True, null=True)
+                                        related_name='billing_address',
+                                        on_delete=models.SET_NULL, blank=True, null=True)
+
+    payment = models.ForeignKey(
+        'Payment', on_delete=models.SET_NULL, blank=True, null=True)
+    coupon = models.ForeignKey(
+        'Coupon', on_delete=models.SET_NULL, blank=True, null=True)
     being_delivered = models.BooleanField(default=False)
     received = models.BooleanField(default=False)
     refund_requested = models.BooleanField(default=False)
@@ -120,7 +142,6 @@ class Order(models.Model):
         return total
 
 
-
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     street_address = models.CharField(max_length=100)
@@ -132,10 +153,9 @@ class Address(models.Model):
 
     def __str__(self):
         return self.user.username
-    
+
     class Meta:
         verbose_name_plural = 'Addresses'
-
 
 
 class Payment(models.Model):
@@ -148,14 +168,12 @@ class Payment(models.Model):
         return self.user.username
 
 
-
 class Coupon(models.Model):
     code = models.CharField(max_length=15)
     amount = models.FloatField()
 
     def __str__(self):
         return self.code
-
 
 
 class Refund(models.Model):
@@ -168,7 +186,6 @@ class Refund(models.Model):
         return f'{self.pk}'
 
 
-
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     stripe_customer_id = models.CharField(max_length=50, blank=True, null=True)
@@ -178,9 +195,9 @@ class UserProfile(models.Model):
         return self.user.username
 
 
-
 def userprofile_receiver(sender, instance, created, *args, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
+
 
 post_save.connect(userprofile_receiver, sender=User)
