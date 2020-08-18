@@ -95,9 +95,13 @@ class ProductList extends Component {
                 <Item.Group divided>
                     {data && data.map(item => (
                         <Item key={item.slug}>
-                            <Item.Image src={item.image_url} />
+                            <Item.Image src={item.image} />
                             <Item.Content>
-                                <Item.Header as='a'>{item.title}</Item.Header>
+                                <Item.Header
+                                    as='a'
+                                    onClick={() => this.props.history.push(`/products/${item.id}`)}>
+                                    {item.title}
+                                </Item.Header>
                                 <Item.Meta>
                                     <span className='cinema'>{item.category}</span>
                                 </Item.Meta>
