@@ -9,7 +9,14 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from core.models import Item, OrderItem, Order, UserProfile, Payment
+from core.models import (
+    Item,
+    OrderItem,
+    Order,
+    UserProfile,
+    Payment,
+    Coupon
+)
 from .serializers import ItemSerializer, OrderSerializer
 
 
@@ -70,6 +77,8 @@ class OrderDetailAPIView(generics.RetrieveAPIView):
 
 
 class PaymentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         order = Order.objects.get(user=request.user, ordered=False)
         userprofile = UserProfile.objects.get(user=request.user)
@@ -181,3 +190,20 @@ class PaymentAPIView(APIView):
         return Response({
             "message": "Invalid data received"
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddCouponAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        code = request.data.get('code', None)
+        if code is None:
+            return Response({
+                'message': _('Invalid data received')
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.get(user=request.user, ordered=False)
+        coupon = get_object_or_404(Coupon, code=code)
+        order.coupon = coupon
+        order.save()
+        return Response(status=status.HTTP_200_OK)
