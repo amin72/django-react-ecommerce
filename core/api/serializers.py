@@ -34,9 +34,27 @@ class ItemSerializer(serializers.ModelSerializer):
         return obj.get_label_display()
 
 
+class VariationDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Variation
+        fields = ['id', 'name']
+
+
+class ItemVariationDetailSerializer(serializers.ModelSerializer):
+    variation = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ItemVariation
+        fields = ['id', 'variation', 'value', 'attachment']
+
+    def get_variation(self, obj):
+        return VariationDetailSerializer(obj.variation).data
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     item = ItemSerializer()
     final_price = serializers.SerializerMethodField()
+    item_variations = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
@@ -44,11 +62,16 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'id',
             'item',
             'quantity',
-            'final_price'
+            'final_price',
+            'item_variations',
         ]
 
     def get_final_price(self, obj):
         return obj.get_final_price()
+
+    def get_item_variations(self, obj):
+        return ItemVariationDetailSerializer(
+            obj.item_variations.all(), many=True).data
 
 
 class CouponSerializer(serializers.ModelSerializer):
