@@ -56,6 +56,13 @@ class OrderSummary extends Component {
             })
     }
 
+    renderVariations = orderItem => {
+        let text = ''
+        orderItem.item_variations.forEach(item_v => {
+            text += `${item_v.variation.name}: ${item_v.value} `
+        })
+        return text
+    }
 
     render() {
         const { data, error, loading } = this.state
@@ -75,8 +82,6 @@ class OrderSummary extends Component {
                         <Dimmer active inverted>
                             <Loader inverted>Loading</Loader>
                         </Dimmer>
-
-                        <Image src="https://react.semantic-ui.com/images/wireframe/short-paragraph.png" />
                     </Segment>
                 )}
                 {data && (
@@ -93,17 +98,17 @@ class OrderSummary extends Component {
                         </Table.Header>
 
                         <Table.Body>
-                            {data && data.order_items.map((order_item, i) => (
-                                <Table.Row key={order_item.id}>
+                            {data && data.order_items.map((orderItem, i) => (
+                                <Table.Row key={orderItem.id}>
                                     <Table.Cell>{i + 1}</Table.Cell>
-                                    <Table.Cell>{order_item.item.title}</Table.Cell>
-                                    <Table.Cell>${order_item.item.price}</Table.Cell>
-                                    <Table.Cell>{order_item.quantity}</Table.Cell>
+                                    <Table.Cell>{orderItem.item.title} - {this.renderVariations(orderItem)}</Table.Cell>
+                                    <Table.Cell>${orderItem.item.price}</Table.Cell>
+                                    <Table.Cell>{orderItem.quantity}</Table.Cell>
                                     <Table.Cell>
-                                        {order_item.item.discount_price && (
+                                        {orderItem.item.discount_price && (
                                             <Label color='green' ribbon>ON DISCOUNT</Label>
                                         )}
-                                    ${order_item.final_price}
+                                    ${orderItem.final_price}
                                     </Table.Cell>
                                 </Table.Row>
                             ))}

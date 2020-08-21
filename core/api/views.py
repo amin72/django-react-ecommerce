@@ -15,7 +15,9 @@ from core.models import (
     Order,
     UserProfile,
     Payment,
-    Coupon
+    Coupon,
+    Variation,
+    ItemVariation
 )
 from .serializers import (
     ItemSerializer,
@@ -42,30 +44,47 @@ class ItemDetailAPIView(generics.RetrieveAPIView):
 class AddToCartAPIView(APIView):
     def post(self, request, *args, **kwargs):
         slug = request.data.get('slug', None)
+        variations = request.data.get('variations', [])
+
         if slug is None:
             return Response({
                 "message": _('Invalid request')
             }, status=status.HTTP_400_BAD_REQUEST)
 
         item = get_object_or_404(Item, slug=slug)
-        order_item, created = OrderItem.objects.get_or_create(item=item,
-                                                              user=request.user,
-                                                              ordered=False)
+
+        minimum_variation_count = Variation.objects.filter(item=item).count()
+        if len(variations) < minimum_variation_count:
+            return Response({
+                'message': _('Please specify the required variations')
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        order_item_qs = OrderItem.objects.filter(item=item,
+                                                 user=request.user,
+                                                 ordered=False)
+
+        for v in variations:
+            order_item_qs = order_item_qs.filter(item_variations=v)
+
+        if order_item_qs.exists():
+            order_item = order_item_qs.first()
+            order_item.quantity += 1
+            order_item.save()
+        else:
+            order_item = OrderItem.objects.create(item=item,
+                                                  user=request.user,
+                                                  ordered=False)
+            order_item.item_variations.add(*variations)
+            order_item.save()
 
         order_qs = Order.objects.filter(user=request.user, ordered=False)
 
         if order_qs.exists():
-            order = order_qs[0]
-            # check if the order item in the order
-            if order.items.filter(item__slug=item.slug).exists():
-                order_item.quantity += 1
-                order_item.save()
-                return Response(status.HTTP_200_OK)
-            else:
-                order_item.quantity = 1
-                order_item.save()
+            order = order_qs.first()
+            # check if the order item isn't in the order
+            if not order.items.filter(item__id=order_item.id).exists():
                 order.items.add(order_item)
-                return Response(status.HTTP_200_OK)
+            return Response(status.HTTP_200_OK)
         else:
             ordered_date = timezone.now()
             order = Order.objects.create(user=request.user,

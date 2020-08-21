@@ -4,17 +4,20 @@ import { connect } from 'react-redux'
 import {
     Button,
     Card,
+    Container,
+    Dimmer,
+    Divider,
     Grid,
+    Header,
+    Form,
     Icon,
     Image,
+    Item,
     Label,
-    Container,
-    Segment,
-    Dimmer,
     Loader,
     Message,
-    Item,
-    Header
+    Segment,
+    Select,
 } from 'semantic-ui-react'
 
 import axios from 'axios'
@@ -29,11 +32,20 @@ class ProductList extends Component {
     state = {
         loading: false,
         error: null,
-        date: null
+        date: null,
+        formVisible: false,
+        formData: {}
     }
 
     componentDidMount() {
         this.handleFetchItem()
+    }
+
+    handleToggleForm = () => {
+        const { formVisible } = this.state
+        this.setState({
+            formVisible: !formVisible
+        })
     }
 
     handleFetchItem = () => {
@@ -61,7 +73,10 @@ class ProductList extends Component {
             loading: true
         })
 
-        authAxios.post(ADD_TO_CART_URL, { slug })
+        const { formData } = this.state
+        const variations = this.handleFormatData(formData)
+
+        authAxios.post(ADD_TO_CART_URL, { slug, variations })
             .then(res => {
                 this.props.fetchCart();
                 this.setState({
@@ -75,8 +90,26 @@ class ProductList extends Component {
             })
     }
 
+    handleFormatData = formData => {
+        return Object.keys(formData).map(key => {
+            return formData[key]
+        })
+    }
+
+    handleChange = (e, { name, value }) => {
+        const { formData } = this.state
+        const updatedFormDate = {
+            ...formData,
+            [name]: value
+        }
+
+        this.setState({
+            formData: updatedFormDate
+        })
+    }
+
     render() {
-        const { loading, error, data } = this.state
+        const { loading, error, data, formVisible, formData } = this.state
         const item = data
 
         return (
@@ -135,7 +168,7 @@ class ProductList extends Component {
                                                 floated='right'
                                                 icon
                                                 labelPosition="right"
-                                                onClick={() => this.handleAddToCart(item.slug)}
+                                                onClick={this.handleToggleForm}
                                             >
                                                 Add to card
                                                 <Icon name='cart plus' />
@@ -143,32 +176,62 @@ class ProductList extends Component {
                                         </Fragment>
                                     )}
                                 />
+                                {formVisible && (
+                                    <Fragment>
+                                        <Divider />
+                                        <Form>
+                                            {data.variations.map(v => {
+                                                const name = v.name.toLowerCase()
+
+                                                return (
+                                                    <Form.Field key={v.id}>
+                                                        <Select
+                                                            name={name}
+                                                            onChange={this.handleChange}
+                                                            options={v.item_variations.map(item_v => (
+                                                                {
+                                                                    key: item_v.id,
+                                                                    text: item_v.value,
+                                                                    value: item_v.id
+                                                                }
+                                                            ))}
+
+                                                            placeholder={`Choose a ${name}`}
+                                                            selection
+                                                            value={formData[name]}
+                                                        />
+                                                    </Form.Field>
+                                                )
+                                            })}
+                                            < Form.Button onClick={() => this.handleAddToCart(item.slug)}>
+                                                Submit
+                                            </Form.Button>
+                                        </Form>
+                                    </Fragment>
+                                )}
                             </Grid.Column>
                             <Grid.Column>
                                 <Header as="h2">Try different variations</Header>
 
                                 {data.variations && (
                                     data.variations.map(v => (
-                                        <Fragment>
+                                        <Fragment key={v.id}>
                                             <Header as="h3">{v.name}</Header>
-                                            <Item.Group divided key={v.id}>
+                                            <Item.Group divided>
                                                 {v.item_variations.map(item_v => (
-                                                    <Fragment>
-
-                                                        <Item key={item_v.id}>
-                                                            {item_v.attachment && (
-                                                                <Item.Image
-                                                                    size='tiny'
-                                                                    src={`${BASE_URL}${item_v.attachment}`}
-                                                                />
-                                                            )}
-                                                            <Item.Content
-                                                                verticalAlign='middle'
-                                                            >
-                                                                {item_v.value}
-                                                            </Item.Content>
-                                                        </Item>
-                                                    </Fragment>
+                                                    <Item key={item_v.id}>
+                                                        {item_v.attachment && (
+                                                            <Item.Image
+                                                                size='tiny'
+                                                                src={`${BASE_URL}${item_v.attachment}`}
+                                                            />
+                                                        )}
+                                                        <Item.Content
+                                                            verticalAlign='middle'
+                                                        >
+                                                            {item_v.value}
+                                                        </Item.Content>
+                                                    </Item>
                                                 ))}
                                             </Item.Group>
                                         </Fragment>
@@ -177,7 +240,8 @@ class ProductList extends Component {
                             </Grid.Column>
                         </Grid.Row>
                     </Grid>
-                )}
+                )
+                }
             </Container >
         )
     }
