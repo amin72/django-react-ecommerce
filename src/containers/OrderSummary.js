@@ -9,8 +9,7 @@ import {
     Message,
     Segment,
     Dimmer,
-    Loader,
-    Image
+    Loader
 } from 'semantic-ui-react'
 import { ORDER_SUMNARY_URL } from '../constants';
 import { authAxios } from '../utils'

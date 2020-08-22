@@ -14,14 +14,13 @@ import {
     Segment
 } from 'semantic-ui-react';
 import { authAxios } from '../utils'
-import { CHECKOUT_URL, ORDER_SUMNARY_URL, ADD_COUPON_URL, X_URL } from '../constants'
+import { CHECKOUT_URL, ORDER_SUMNARY_URL, ADD_COUPON_URL } from '../constants'
 import {
     CardElement,
     Elements,
     ElementsConsumer,
 } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import Axios from 'axios';
 
 
 class OrderPreview extends Component {

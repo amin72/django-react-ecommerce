@@ -40,10 +40,16 @@ class CustomLayout extends React.Component {
 
                             {authenticated ? (
                                 <Fragment>
+                                    <Link to="/profile">
+                                        <Menu.Item header>
+                                            Profile
+                                        </Menu.Item>
+                                    </Link>
                                     <Dropdown
                                         icon="cart"
                                         loading={loading}
-                                        text={`${cart !== null ? cart.order_items.length : 0}`} pointing className='link item'>
+                                        text={`${cart !== null ? cart.order_items.length : 0}`}
+                                        pointing className='link item'>
                                         {cart &&
                                             <Dropdown.Menu>
                                                 {cart && cart.order_items.map(order_item => (
@@ -65,7 +71,8 @@ class CustomLayout extends React.Component {
                                                             <Dropdown.Item
                                                                 icon='arrow right'
                                                                 text='Checkout'
-                                                                onClick={() => this.props.history.push('/order-summary')} />
+                                                                onClick={() => this.props.history.push('/order-summary')}
+                                                            />
                                                         </Dropdown.Item>
                                                     </>
                                                 ) : null}

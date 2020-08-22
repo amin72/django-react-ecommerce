@@ -8,3 +8,6 @@ export const ADD_TO_CART_URL = `${END_POINT}/add-to-cart/`
 export const ORDER_SUMNARY_URL = `${END_POINT}/order-summary/`
 export const CHECKOUT_URL = `${END_POINT}/checkout/`
 export const ADD_COUPON_URL = `${END_POINT}/add-coupon/`
+export const ADDRESS_LIST_URL = addressType => `${END_POINT}/addresses/?address-type=${addressType}`
+export const ADDRESS_CREATE_URL = `${END_POINT}/addresses/create/`
+export const COUNTRY_LIST_URL = `${END_POINT}/countries/`
