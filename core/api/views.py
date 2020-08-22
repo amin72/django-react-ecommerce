@@ -1,4 +1,5 @@
 import stripe
+from django_countries import countries
 from django.conf import settings
 from django.http import Http404
 from django.utils import timezone
@@ -17,12 +18,14 @@ from core.models import (
     Payment,
     Coupon,
     Variation,
-    ItemVariation
+    ItemVariation,
+    Address,
 )
 from .serializers import (
     ItemSerializer,
     OrderSerializer,
-    ItemDetailSerializer
+    ItemDetailSerializer,
+    AddressSerializer
 )
 
 
@@ -235,3 +238,30 @@ class AddCouponAPIView(APIView):
         order.coupon = coupon
         order.save()
         return Response(status=status.HTTP_200_OK)
+
+
+class AddressListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AddressSerializer
+
+    def get_queryset(self):
+        address_type = self.request.query_params.get('address-type', None)
+        qs = Address.objects.filter(user=self.request.user)
+
+        if address_type is None:
+            return qs
+        return qs.filter(address_type=address_type)
+
+
+class AddressCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AddressSerializer
+    queryset = Address.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class CountryListAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        return Response(countries, status=status.HTTP_200_OK)
