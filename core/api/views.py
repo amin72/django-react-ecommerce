@@ -115,45 +115,37 @@ class PaymentAPIView(APIView):
         order = Order.objects.get(user=request.user, ordered=False)
         userprofile = UserProfile.objects.get(user=request.user)
 
+        # get data from client
         token = request.data.get('stripeToken')
-        # save = request.POST.get('save')
-        # use_default = request.POST.get('use_default')
-        save = False
-        use_default = False
+        billing_address_id = request.data.get('selectedBillingAddress')
+        shipping_address_id = request.data.get('selectedShippingAddress')
 
-        if save:
-            # allow to fetch cards
-            if not userprofile.stripe_customer_id:
-                customer = stripe.Customer.create(
-                    email=request.user.email,
-                    source=token
-                )
+        billing_address = Address.objects.get(id=billing_address_id)
+        shipping_address = Address.objects.get(id=shipping_address_id)
 
-                userprofile.stripe_customer_id = customer['id']
-                userprofile.one_click_purchasing = True
-                userprofile.save()
-            else:
-                stripe.Customer.create_source(
-                    userprofile.stripe_customer_id,
-                    source=token
-                )
+        if not userprofile.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=request.user.email,
+                source=token
+            )
+            userprofile.stripe_customer_id = customer['id']
+            userprofile.one_click_purchasing = True
+            userprofile.save()
+        else:
+            stripe.Customer.create_source(
+                userprofile.stripe_customer_id,
+                source=token
+            )
 
         amount = int(order.get_total() * 100)  # cents
 
         try:
             # Use Stripe's library to make requests
-            if use_default:
-                charge = stripe.Charge.create(
-                    amount=amount,  # cents
-                    currency='usd',
-                    customer=userprofile.stripe_customer_id
-                )
-            else:
-                charge = stripe.Charge.create(
-                    amount=amount,  # cents
-                    currency='usd',
-                    source=token
-                )
+            charge = stripe.Charge.create(
+                amount=amount,  # cents
+                currency='usd',
+                customer=userprofile.stripe_customer_id
+            )
 
             # create the payment
             payment = Payment.objects.create(
@@ -164,6 +156,8 @@ class PaymentAPIView(APIView):
 
             order.ordered = True
             order.payment = payment
+            order.billing_address = billing_address
+            order.shipping_address = shipping_address
             # order.ref_code = create_ref_code()
             order.save()
 
