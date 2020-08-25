@@ -223,7 +223,7 @@ class Profile extends Component {
                                 )
                             })}
                         </Card.Group>
-                        <Divider />
+                        {addresses.length > 0 && <Divider />}
                         <Form onSubmit={this.handleCreateAddress} success={success}>
                             <Form.Input
                                 required
