@@ -157,6 +157,7 @@ class ItemDetailSerializer(serializers.ModelSerializer):
 
 class AddressSerializer(serializers.ModelSerializer):
     country = CountryField()
+    user = serializers.StringRelatedField()
 
     class Meta:
         model = Address
