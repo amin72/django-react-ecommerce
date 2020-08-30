@@ -248,12 +248,30 @@ class AddressListAPIView(generics.ListAPIView):
 
 
 class AddressCreateAPIView(generics.CreateAPIView):
+    # TODO: check ownership in permission_classes
     permission_classes = [IsAuthenticated]
     serializer_class = AddressSerializer
     queryset = Address.objects.all()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class AddressUpdateAPIView(generics.UpdateAPIView):
+    # TODO: check ownership in permission_classes
+    permission_classes = [IsAuthenticated]
+    serializer_class = AddressSerializer
+    queryset = Address.objects.all()
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class AddressDeleteAPIView(generics.DestroyAPIView):
+    # TODO: check ownership in permission_classes
+    permission_classes = [IsAuthenticated]
+    serializer_class = AddressSerializer
+    queryset = Address.objects.all()
 
 
 class CountryListAPIView(APIView):

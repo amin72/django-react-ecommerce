@@ -31,6 +31,14 @@ urlpatterns = [
     path('addresses/create/', views.AddressCreateAPIView.as_view(),
          name='address_create'),
 
+    # update address
+    path('addresses/<int:pk>/update/', views.AddressUpdateAPIView.as_view(),
+         name='address_update'),
+
+    # delete address
+    path('addresses/<int:pk>/delete/', views.AddressDeleteAPIView.as_view(),
+         name='address_delete'),
+
     # country list
     path('countries/', views.CountryListAPIView.as_view(),
          name='country_list'),
