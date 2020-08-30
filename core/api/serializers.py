@@ -7,7 +7,8 @@ from core.models import (
     Coupon,
     Variation,
     ItemVariation,
-    Address
+    Address,
+    Payment
 )
 
 
@@ -172,3 +173,13 @@ class AddressSerializer(serializers.ModelSerializer):
             'default'
         ]
         read_only_fields = ['id', 'user']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = [
+            'id',
+            'amount',
+            'timestamp'
+        ]
