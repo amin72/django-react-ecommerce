@@ -1,15 +1,15 @@
 import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import { Redirect } from 'react-router-dom'
 import {
+    Button,
     Card,
-    Dimmer,
     Divider,
     Form,
     Grid,
     Header,
-    Loader,
     Menu,
     Message,
-    Segment,
     Select,
     Label
 } from 'semantic-ui-react'
@@ -19,6 +19,8 @@ import { authAxios } from '../utils'
 import {
     ADDRESS_LIST_URL,
     ADDRESS_CREATE_URL,
+    ADDRESS_UPDATE_URL,
+    ADDRESS_DELETE_URL,
     COUNTRY_LIST_URL
 } from '../constants'
 
@@ -26,68 +28,33 @@ import {
 // menu names
 const billingAddress = "Billing Address"
 const physicalAddress = "Physical Address"
+const paymentHistory = "Payment history"
+const UPDATE_FORM = 'UPDATE_FORM'
+const CREATE_FORM = 'CREATE_FORM'
 
 
-class Profile extends Component {
-
+class AddressForm extends Component {
     state = {
-        activeItem: billingAddress,
-        addresses: [],
-        formData: {
-            default: false
-        },
-        countries: [],
-        loading: false,
         error: null,
         success: false,
-        saving: false
-    }
-
-    componentDidMount = () => {
-        this.handleFetchAddresses()
-        this.handleFetchCountries()
-    }
-
-    handleItemClick = (e, { name }) => {
-        this.setState({
-            activeItem: name
-        }, () => {
-            this.handleFetchAddresses()
-        })
-    }
-
-    handleFetchAddresses = () => {
-        this.setState({
-            loading: true
-        })
-
-        const { activeItem } = this.state
-
-        // fetch user addresses
-        authAxios.get(ADDRESS_LIST_URL(activeItem === billingAddress ? 'B' : 'S'))
-            .then(res => {
-                this.setState({
-                    addresses: res.data,
-                    loading: false
-                })
-            }).catch(err => {
-                this.setState({
-                    error: err,
-                    loading: false
-                })
-            })
-    }
-
-    handleChange = e => {
-        const { formData } = this.state
-        const updatedFormData = {
-            ...formData,
-            [e.target.name]: e.target.value
+        saving: false,
+        formData: {
+            apartment_address: '',
+            country: '',
+            default: false,
+            street_address: '',
+            zip: ''
         }
+    }
 
-        this.setState({
-            formData: updatedFormData
-        })
+    componentDidMount() {
+        const { formType, address } = this.props
+
+        if (formType === UPDATE_FORM) {
+            this.setState({
+                formData: address
+            })
+        }
     }
 
     handleSelectChange = (e, { name, value }) => {
@@ -114,26 +81,199 @@ class Profile extends Component {
         })
     }
 
-    handleCreateAddress = e => {
+    handleChange = e => {
+        const { formData } = this.state
+        const updatedFormData = {
+            ...formData,
+            [e.target.name]: e.target.value
+        }
+
+        this.setState({
+            formData: updatedFormData
+        })
+    }
+
+    handleSubmit = e => {
         e.preventDefault()
         this.setState({
             saving: true
         })
-        const { activeItem, formData } = this.state
+
+        const { formType } = this.props
+        if (formType === UPDATE_FORM) {
+            this.handleUpdateAddress()
+        } else {
+            this.handleCreateAddress()
+        }
+    }
+
+    handleCreateAddress = () => {
+        const { formData } = this.state
+        const { activeItem } = this.props
 
         authAxios.post(ADDRESS_CREATE_URL, {
             ...formData,
             address_type: activeItem === billingAddress ? 'B' : 'S'
-        }).catch(res => {
-            this.setState({
-                saving: false,
-                success: true
+        }).then(res => {
+            this.setState(state => {
+                return {
+                    saving: false,
+                    success: true,
+                    formData: {
+                        ...state.formData,
+                        default: false
+                    }
+                }
             })
+            // callback to fetch new addresses
+            this.props.callback()
         }).catch(err => {
             this.setState({
                 error: err
             })
         })
+    }
+
+    handleUpdateAddress = () => {
+        const { formData } = this.state
+        const { activeItem } = this.props
+
+        authAxios.put(ADDRESS_UPDATE_URL(formData.id), {
+            ...formData,
+            address_type: activeItem === billingAddress ? 'B' : 'S'
+        }).then(res => {
+            this.setState(state => {
+                return {
+                    saving: false,
+                    success: true,
+                    formData: {
+                        ...state.formData,
+                        default: false
+                    }
+                }
+            })
+            // callback to fetch upated addresses
+            this.props.callback()
+        }).catch(err => {
+            this.setState({
+                error: err
+            })
+        })
+    }
+
+    render() {
+        const { error, success, saving, formData } = this.state
+        const { countries } = this.props
+
+        return (
+            <Form onSubmit={this.handleSubmit} success={success} error={error}>
+                <Form.Input
+                    required
+                    name='street_address'
+                    placeholder='Street address'
+                    onChange={this.handleChange}
+                    value={formData.street_address || ''}
+                />
+                <Form.Input
+                    required
+                    name='apartment_address'
+                    placeholder='Apartment address'
+                    onChange={this.handleChange}
+                    value={formData.apartment_address}
+                />
+                <Form.Field>
+                    <Select
+                        loading={countries.length < 1}
+                        required
+                        clearable
+                        search
+                        fluid
+                        name='country'
+                        options={countries}
+                        placeholder='Country'
+                        onChange={this.handleSelectChange}
+                        value={formData.country}
+                    />
+                </Form.Field>
+                <Form.Input
+                    required
+                    name='zip'
+                    placeholder='Zip code'
+                    onChange={this.handleChange}
+                    value={formData.zip || ''}
+                />
+                <Form.Checkbox
+                    name='default'
+                    label='Make this default address?'
+                    onChange={this.handleToggleDefault}
+                    checked={formData.default}
+                />
+                {success && (
+                    <Message
+                        success
+                        header='Success!'
+                        content="Your address was saved"
+                    />
+
+                )}
+                {error && (
+                    <Message
+                        error
+                        header='There was an error'
+                        content={JSON.stringify(error)}
+                    />
+                )}
+                <Form.Button
+                    fluid
+                    primary
+                    disabled={saving}
+                    loading={saving}
+                >
+                    Save
+            </Form.Button>
+            </Form>
+        )
+    }
+}
+
+
+class Profile extends Component {
+
+    state = {
+        activeItem: billingAddress,
+        addresses: [],
+        countries: [],
+        selectedAddress: null,
+
+    }
+
+    componentDidMount = () => {
+        this.handleFetchAddresses()
+        this.handleFetchCountries()
+    }
+
+    handleItemClick = (e, { name }) => {
+        this.setState({
+            activeItem: name
+        }, () => {
+            this.handleFetchAddresses()
+        })
+    }
+
+    handleFetchAddresses = () => {
+        const { activeItem } = this.state
+
+        // fetch user addresses
+        authAxios.get(ADDRESS_LIST_URL(activeItem === billingAddress ? 'B' : 'S'))
+            .then(res => {
+                this.setState({
+                    addresses: res.data,
+                })
+            }).catch(err => {
+                this.setState({
+                    error: err,
+                })
+            })
     }
 
     handleFetchCountries = () => {
@@ -161,28 +301,41 @@ class Profile extends Component {
         })
     }
 
+    handleSelectAddress = address => {
+        this.setState({
+            selectedAddress: address
+        })
+    }
+
+    handleDeleteAddress = addressID => {
+        authAxios.delete(ADDRESS_DELETE_URL(addressID))
+            .then(res => {
+                this.handleCallback()
+            }).catch(err => {
+                this.setState({
+                    error: err,
+                })
+            })
+
+    }
+
+    handleCallback = () => {
+        this.handleFetchAddresses()
+        this.setState({
+            selectedAddress: null
+        })
+    }
+
     render() {
-        const { activeItem, loading, error, addresses, countries, saving, success } = this.state
+        const { activeItem, addresses, countries, selectedAddress } = this.state
+        const { isAuthenticated } = this.props
+
+        if (!isAuthenticated) {
+            return <Redirect to="/login" />
+        }
 
         return (
             <Grid container columns={2} divided>
-                <Grid.Row columns={1}>
-                    {error && (
-                        <Message
-                            error
-                            header='There was an error'
-                            content={JSON.stringify(error)}
-                        />
-                    )}
-
-                    {loading && (
-                        <Segment>
-                            <Dimmer active inverted>
-                                <Loader inverted>Loading</Loader>
-                            </Dimmer>
-                        </Segment>
-                    )}
-                </Grid.Row>
                 <Grid.Row>
                     <Grid.Column width={6}>
                         <Menu pointing vertical fluid>
@@ -196,11 +349,18 @@ class Profile extends Component {
                                 active={activeItem === physicalAddress}
                                 onClick={this.handleItemClick}
                             />
+                            <Menu.Item
+                                name="Payment history"
+                                active={activeItem === paymentHistory}
+                                onClick={this.handleItemClick}
+                            />
                         </Menu>
                     </Grid.Column>
                     <Grid.Column width={10}>
                         <Header>
-                            {`Update your ${activeItem === billingAddress ? 'billing' : 'shipping'} address`}
+                            {`Update your ${activeItem === billingAddress ?
+                                'billing' : 'shipping'}
+                                 address`}
                         </Header>
                         <Divider />
                         <Card.Group>
@@ -219,65 +379,42 @@ class Profile extends Component {
                                                 {address.zip}
                                             </Card.Description>
                                         </Card.Content>
+                                        <Card.Content extra>
+                                            <Button
+                                                color='yellow'
+                                                onClick={() => this.handleSelectAddress(address)}>
+                                                Update
+                                            </Button>
+                                            <Button
+                                                onClick={() => this.handleDeleteAddress(address.id)}
+                                                color='red'
+                                            >
+                                                Delete
+                                            </Button>
+                                        </Card.Content>
                                     </Card>
                                 )
                             })}
                         </Card.Group>
                         {addresses.length > 0 && <Divider />}
-                        <Form onSubmit={this.handleCreateAddress} success={success}>
-                            <Form.Input
-                                required
-                                name='street_address'
-                                placeholder='Street address'
-                                onChange={this.handleChange}
-                            />
-                            <Form.Input
-                                required
-                                name='apartment_address'
-                                placeholder='Apartment address'
-                                onChange={this.handleChange}
-                            />
-                            <Form.Field>
-                                <Select
-                                    loading={countries.length < 1}
-                                    required
-                                    clearable
-                                    search
-                                    fluid
-                                    name='country'
-                                    options={countries}
-                                    placeholder='Country'
-                                    onChange={this.handleSelectChange}
-                                />
-                            </Form.Field>
-                            <Form.Input
-                                required
-                                name='zip'
-                                placeholder='Zip code'
-                                onChange={this.handleChange}
-                            />
-                            <Form.Checkbox
-                                name='default'
-                                label='Make this default address?'
-                                onChange={this.handleToggleDefault}
-                            />
-                            {success && (
-                                <Message
-                                    success
-                                    header='Success!'
-                                    content="Your address was saved"
-                                />
 
-                            )}
-                            <Form.Button
-                                fluid
-                                primary
-                                disabled={saving}
-                                loading={saving}
-                            >
-                                Save
-                            </Form.Button>
-                        </Form>
+                        {selectedAddress === null ? (
+                            <AddressForm
+                                activeItem={activeItem}
+                                countries={countries}
+                                formType={CREATE_FORM}
+                                callback={this.handleCallback}
+                            />
+                        ) : null}
+                        {selectedAddress && (
+                            <AddressForm
+                                activeItem={activeItem}
+                                countries={countries}
+                                formType={UPDATE_FORM}
+                                address={selectedAddress}
+                                callback={this.handleCallback}
+                            />
+                        )}
                     </Grid.Column>
                 </Grid.Row>
             </Grid >
@@ -285,4 +422,10 @@ class Profile extends Component {
     }
 }
 
-export default Profile
+const mapStateToProps = state => {
+    return {
+        isAuthenticated: state.auth.token !== null
+    }
+}
+
+export default connect(mapStateToProps)(Profile)
