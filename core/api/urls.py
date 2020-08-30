@@ -42,4 +42,13 @@ urlpatterns = [
     # country list
     path('countries/', views.CountryListAPIView.as_view(),
          name='country_list'),
+
+    # delete order item
+    path('order-items/<int:pk>/delete/', views.OrderItemDeleteAPIView.as_view(),
+         name='orderitem_delete'),
+
+    # delete order item
+    path('order-item/update-quantity/',
+          views.OrderItemQuantityUpdateAPIView.as_view(),
+          name='orderitem_delete'),
 ]

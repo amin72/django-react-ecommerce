@@ -109,6 +109,11 @@ class OrderDetailAPIView(generics.RetrieveAPIView):
             raise Http404(_("You do not have an active order"))
 
 
+class OrderItemDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsOwner]
+    queryset = OrderItem.objects.all()
+
+
 class PaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -275,3 +280,46 @@ class AddressDeleteAPIView(generics.DestroyAPIView):
 class CountryListAPIView(APIView):
     def get(self, request, *args, **kwargs):
         return Response(countries, status=status.HTTP_200_OK)
+
+
+class OrderItemQuantityUpdateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        slug = self.request.data.get('slug', None)
+        if slug is None:
+            return Response({
+                'message': _('Invalid data')
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        item = get_object_or_404(Item, slug=slug)
+        order_qs = Order.objects.filter(user=request.user, ordered=False)
+
+        # item exists in the cart
+        if order_qs.exists():
+            order = order_qs.first()
+
+            # check if the order item is in the order
+            if order.items.filter(item__slug=item.slug).exists():
+                order_item = OrderItem.objects.filter(item=item,
+                    user=request.user, ordered=False).first()
+
+                # if order_item.quantity == 1:
+                #     order.items.remove(order_item)
+                #     return Response({
+                #         'message': _('This item was removed from your cart')
+                #     }, status=status.HTTP_200_OK)
+
+                if order_item.quantity > 1:
+                    order_item.quantity -= 1
+                    order_item.save()
+                else:
+                    order.items.remove(order_item)
+                # cart updated successfully
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message': _('This item was not in your cart')
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'message': _('You don not have an active order')
+        }, status=status.HTTP_400_BAD_REQUEST)
