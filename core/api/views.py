@@ -25,7 +25,8 @@ from .serializers import (
     ItemSerializer,
     OrderSerializer,
     ItemDetailSerializer,
-    AddressSerializer
+    AddressSerializer,
+    PaymentSerializer
 )
 from .permissions import IsOwner
 
@@ -323,3 +324,12 @@ class OrderItemQuantityUpdateAPIView(APIView):
         return Response({
             'message': _('You don not have an active order')
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentListAPIView(generics.ListAPIView):
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Payment.objects.filter(user=self.request.user
+                                        ).order_by('-timestamp')

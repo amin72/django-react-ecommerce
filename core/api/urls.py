@@ -51,4 +51,9 @@ urlpatterns = [
     path('order-item/update-quantity/',
           views.OrderItemQuantityUpdateAPIView.as_view(),
           name='orderitem_delete'),
+
+    # delete order item
+    path('payments/',
+          views.PaymentListAPIView.as_view(),
+          name='payment_list'),
 ]
