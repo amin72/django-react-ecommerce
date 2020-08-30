@@ -27,6 +27,7 @@ from .serializers import (
     ItemDetailSerializer,
     AddressSerializer
 )
+from .permissions import IsOwner
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -248,7 +249,6 @@ class AddressListAPIView(generics.ListAPIView):
 
 
 class AddressCreateAPIView(generics.CreateAPIView):
-    # TODO: check ownership in permission_classes
     permission_classes = [IsAuthenticated]
     serializer_class = AddressSerializer
     queryset = Address.objects.all()
@@ -258,8 +258,7 @@ class AddressCreateAPIView(generics.CreateAPIView):
 
 
 class AddressUpdateAPIView(generics.UpdateAPIView):
-    # TODO: check ownership in permission_classes
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwner]
     serializer_class = AddressSerializer
     queryset = Address.objects.all()
 
@@ -268,8 +267,7 @@ class AddressUpdateAPIView(generics.UpdateAPIView):
 
 
 class AddressDeleteAPIView(generics.DestroyAPIView):
-    # TODO: check ownership in permission_classes
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwner]
     serializer_class = AddressSerializer
     queryset = Address.objects.all()
 
